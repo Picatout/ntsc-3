@@ -1,0 +1,235 @@
+EESchema Schematic File Version 2  date 2013-07-30 20:21:38
+LIBS:power
+LIBS:device
+LIBS:transistors
+LIBS:conn
+LIBS:linear
+LIBS:regul
+LIBS:74xx
+LIBS:cmos4000
+LIBS:adc-dac
+LIBS:memory
+LIBS:xilinx
+LIBS:special
+LIBS:microcontrollers
+LIBS:dsp
+LIBS:microchip
+LIBS:analog_switches
+LIBS:motorola
+LIBS:texas
+LIBS:intel
+LIBS:audio
+LIBS:interface
+LIBS:digital-audio
+LIBS:philips
+LIBS:display
+LIBS:cypress
+LIBS:siliconi
+LIBS:opto
+LIBS:atmel
+LIBS:contrib
+LIBS:valves
+LIBS:librairie-personnelle
+EELAYER 27 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date "31 jul 2013"
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L MSP430G2553IN20 U1
+U 1 1 51F573B3
+P 6200 3650
+F 0 "U1" H 6250 3650 60  0000 C CNN
+F 1 "MSP430G2553IN20" H 6250 4300 60  0000 C CNN
+F 2 "~" H 6200 3650 60  0000 C CNN
+F 3 "~" H 6200 3650 60  0000 C CNN
+	1    6200 3650
+	1    0    0    -1  
+$EndComp
+$Comp
+L 23K256 U2
+U 1 1 51F573C2
+P 6300 5050
+F 0 "U2" H 6300 5300 60  0000 C CNN
+F 1 "23K256" V 6250 5050 60  0000 C CNN
+F 2 "~" H 6300 5050 60  0000 C CNN
+F 3 "~" H 6300 5050 60  0000 C CNN
+	1    6300 5050
+	1    0    0    -1  
+$EndComp
+$Comp
+L RCA_JACK J1
+U 1 1 51F5741E
+P 3650 3950
+F 0 "J1" H 3650 4050 60  0000 C CNN
+F 1 "RCA_JACK" H 3650 4250 60  0000 C CNN
+F 2 "~" H 3650 3950 60  0000 C CNN
+F 3 "~" H 3650 3950 60  0000 C CNN
+	1    3650 3950
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R1
+U 1 1 51F5742E
+P 4500 3950
+F 0 "R1" V 4580 3950 50  0000 C CNN
+F 1 "470R" V 4500 3950 50  0000 C CNN
+F 2 "" H 4500 3950 60  0000 C CNN
+F 3 "" H 4500 3950 60  0000 C CNN
+	1    4500 3950
+	0    -1   -1   0   
+$EndComp
+$Comp
+L R R2
+U 1 1 51F5743B
+P 4500 4300
+F 0 "R2" V 4580 4300 50  0000 C CNN
+F 1 "220R" V 4500 4300 50  0000 C CNN
+F 2 "" H 4500 4300 60  0000 C CNN
+F 3 "" H 4500 4300 60  0000 C CNN
+	1    4500 4300
+	0    -1   -1   0   
+$EndComp
+$Comp
+L GND #PWR1
+U 1 1 51F5746B
+P 3650 4600
+F 0 "#PWR1" H 3650 4600 30  0001 C CNN
+F 1 "GND" H 3650 4530 30  0001 C CNN
+F 2 "" H 3650 4600 60  0000 C CNN
+F 3 "" H 3650 4600 60  0000 C CNN
+	1    3650 4600
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR2
+U 1 1 51F574AD
+P 5750 5450
+F 0 "#PWR2" H 5750 5450 30  0001 C CNN
+F 1 "GND" H 5750 5380 30  0001 C CNN
+F 2 "" H 5750 5450 60  0000 C CNN
+F 3 "" H 5750 5450 60  0000 C CNN
+	1    5750 5450
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR3
+U 1 1 51F574B3
+P 7750 3250
+F 0 "#PWR3" H 7750 3250 30  0001 C CNN
+F 1 "GND" H 7750 3180 30  0001 C CNN
+F 2 "" H 7750 3250 60  0000 C CNN
+F 3 "" H 7750 3250 60  0000 C CNN
+	1    7750 3250
+	1    0    0    -1  
+$EndComp
+$Comp
+L +3,6V J2
+U 1 1 51F57609
+P 5500 3000
+F 0 "J2" H 5550 3200 60  0000 C CNN
+F 1 "+3,6V" H 5500 3350 60  0000 C CNN
+F 2 "" H 5500 3000 60  0000 C CNN
+F 3 "" H 5500 3000 60  0000 C CNN
+	1    5500 3000
+	1    0    0    -1  
+$EndComp
+$Comp
+L +3,6V J3
+U 1 1 51F57634
+P 6850 4800
+F 0 "J3" H 6900 5000 60  0000 C CNN
+F 1 "+3,6V" H 6850 5150 60  0000 C CNN
+F 2 "" H 6850 4800 60  0000 C CNN
+F 3 "" H 6850 4800 60  0000 C CNN
+	1    6850 4800
+	1    0    0    -1  
+$EndComp
+Text Notes 3000 3950 0    60   ~ 0
+NTSC\nvidéo OUT
+Wire Wire Line
+	3650 4450 3650 4600
+Wire Wire Line
+	4000 3950 4250 3950
+Wire Wire Line
+	4250 3950 4250 4300
+Wire Wire Line
+	5500 3950 4750 3950
+Wire Wire Line
+	5750 5250 5750 5450
+Wire Wire Line
+	6850 4800 6850 5050
+Wire Wire Line
+	5500 3150 5500 3000
+Wire Wire Line
+	7000 3150 7750 3150
+Wire Wire Line
+	7750 3150 7750 3250
+Wire Wire Line
+	5750 4950 5500 4950
+Wire Wire Line
+	5500 4950 5500 4050
+Connection ~ 6850 4950
+Wire Wire Line
+	6850 5250 7400 5250
+Wire Wire Line
+	7400 5250 7400 3650
+Wire Wire Line
+	7400 3650 7000 3650
+Wire Wire Line
+	6850 5150 7100 5150
+Wire Wire Line
+	7100 5150 7100 4300
+Wire Wire Line
+	7100 4300 5200 4300
+Wire Wire Line
+	5200 4300 5200 3750
+Wire Wire Line
+	5200 3750 5500 3750
+Wire Wire Line
+	7000 3750 7200 3750
+Wire Wire Line
+	7200 3750 7200 4400
+Wire Wire Line
+	7200 4400 4750 4400
+Connection ~ 4750 4400
+$Comp
+L DIODE D1
+U 1 1 51F71A69
+P 4750 4700
+F 0 "D1" H 4750 4800 40  0000 C CNN
+F 1 "1N4148" H 4750 4600 40  0000 C CNN
+F 2 "" H 4750 4700 60  0000 C CNN
+F 3 "" H 4750 4700 60  0000 C CNN
+	1    4750 4700
+	0    -1   -1   0   
+$EndComp
+$Comp
+L R R3
+U 1 1 51F71A80
+P 5200 5050
+F 0 "R3" V 5280 5050 50  0000 C CNN
+F 1 "110R" V 5200 5050 50  0000 C CNN
+F 2 "" H 5200 5050 60  0000 C CNN
+F 3 "" H 5200 5050 60  0000 C CNN
+	1    5200 5050
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	4750 4500 4750 4300
+Wire Wire Line
+	4750 4900 4750 5050
+Wire Wire Line
+	4750 5050 4950 5050
+Wire Wire Line
+	5750 5050 5450 5050
+$EndSCHEMATC

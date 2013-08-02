@@ -1,0 +1,34 @@
+C:\euphoria\include\get.e:296 in function get() 
+type_check failure, input_file is -1 
+    file = -1
+
+... called from C:\Users\Jacques\Documents\ccs-projects\NTSC-3\images\cvt-loup.ex:14 
+
+
+Global & Local Variables
+
+ C:\euphoria\include\get.e:
+    input_file = -1
+    input_string = <no value>
+    string_next = <no value>
+    ch = <no value>
+
+ C:\Users\Jacques\Documents\ccs-projects\NTSC-3\images\cvt-loup.ex:
+    input = {108'l',111'o',117'u',112'p',46'.',116't',120'x',116't'}
+    output = {46'.',46'.',92'\',108'l',111'o',117'u',112'p',46'.',104'h'}
+    fo = 3
+    fi = -1
+    original = <no value>
+    new_width = <no value>
+    b_w = <no value>
+    new_pixel = <no value>
+    old_pixel = <no value>
+    line = <no value>
+    error = <no value>
+    y = <no value>
+    x = <no value>
+    y = <no value>
+    x = <no value>
+
+
+Warning: local variable line in cvt-loup.ex is not used
