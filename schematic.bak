@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date 2013-08-01 22:05:42
+EESchema Schematic File Version 2  date 2013-07-30 20:21:38
 LIBS:power
 LIBS:device
 LIBS:transistors
@@ -30,14 +30,13 @@ LIBS:atmel
 LIBS:contrib
 LIBS:valves
 LIBS:librairie-personnelle
-LIBS:schematic-cache
 EELAYER 27 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 1
 Title ""
-Date "1 aug 2013"
+Date "31 jul 2013"
 Rev ""
 Comp ""
 Comment1 ""
@@ -200,6 +199,8 @@ Wire Wire Line
 	7000 3750 7200 3750
 Wire Wire Line
 	7200 3750 7200 4400
+Wire Wire Line
+	7200 4400 4750 4400
 Connection ~ 4750 4400
 $Comp
 L DIODE D1
@@ -231,15 +232,4 @@ Wire Wire Line
 	4750 5050 4950 5050
 Wire Wire Line
 	5750 5050 5450 5050
-Wire Wire Line
-	7200 4400 5600 4400
-Wire Wire Line
-	5600 4400 5600 5050
-Connection ~ 5600 5050
-Wire Wire Line
-	5500 3850 5000 3850
-Wire Wire Line
-	5000 3850 5000 4400
-Wire Wire Line
-	5000 4400 4750 4400
 $EndSCHEMATC

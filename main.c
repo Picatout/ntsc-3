@@ -21,8 +21,13 @@
 #define  DISP_BLK 1 // affichage bloqué
 
 volatile unsigned int ln_cnt; // compte les ligne balyage NTSC
-volatile unsigned char display; // indicateur booléen activant l'ISR d'affichage.
 volatile unsigned char blanked; // indicateur d'affichage bloquée pendant phase vsync.
+volatile unsigned char video_op; // opération sur mémoire vidéo
+volatile unsigned int sram_addr; // addresse début opération lecture/écriture
+volatile unsigned int byte_count; // nombre d'octets à lire ou écrire
+volatile unsigned long long ticks; // compteur système incrémentée à toute les 62,5µSec.
+volatile unsigned int video_addr; // addresse de début de la mémoire vidéo dans la SRAM
+volatile unsigned int mcu_addr; // pointeur vers buffer vidéo en RAM
 
 // police de caractères 5x7  lettres majuscules et chiffre
 const unsigned char font[][7]={
@@ -94,11 +99,13 @@ const unsigned char font[][7]={
 };
 
 
-unsigned char line[BYTES_PER_LINE];
+unsigned char disp_buffer[7*BYTES_PER_LINE]; // tampon pour le transfert de données entre mémoire RAM et SPI RAM
 
 void delay_ms(unsigned int ms){
-	while (ms--)
-		_delay_cycles(16000);
+	while (ms--){
+		while (ticks&15);
+		while (!(ticks&15));
+	}
 } // delay_ms()
 
 void configure_clock(){ // MCLK et SMCLK à 16Mhz
@@ -106,25 +113,41 @@ void configure_clock(){ // MCLK et SMCLK à 16Mhz
 	 DCOCTL = CALDCO_16MHZ;
 }//configure_clock()
 
-/*
+
+
 void clear_screen(){
-	int i;
-	unsigned char* pChar;
-	pChar=&frame[0][0];
-    for (i=0;i<(DISP_LINES*BYTES_PER_LINE);i++){
-    	*pChar++ =0;
-    }
+	sram_addr=0;
+	byte_count=SCREEN_HEIGHT;
+	_disable_interrupts();
+	video_op=VID_CLR;
+	_enable_interrupts();
+	while (video_op);
+
 }//clear_screen()
+
 
 void dot(int x, int y){
 	if ((x>>3)>=BYTES_PER_LINE) return;
-	frame[y][x>>3] |= (1<< (7-(x & 7)));
+	disp_buffer[0] = (1 << (7-(x & 7)));
+	sram_addr=(y<<5)+(x>>3); // 48 octets par lignes, sram_addr=y*BYTES_PER_LINE + x/8
+	mcu_addr=(unsigned int)(&disp_buffer[0]);
+	_disable_interrupts();
+	video_op=VID_SET;
+	_enable_interrupts();
+	while (video_op);
 } // dot()
 
 void erase_dot(int x, int y){
 	if ((x>>3)>=BYTES_PER_LINE) return;
-	frame[y][x>>3] &= ~(1<< (7-(x & 7)));
+	disp_buffer[0] = (1 << (7-(x & 7)));
+	sram_addr=(y<<5)+(x>>3);
+	mcu_addr=(unsigned int)(&disp_buffer[0]);
+	_disable_interrupts();
+	video_op=VID_RST;
+	_enable_interrupts();
+	while (video_op);
 }//erase_dot()
+
 
 void swap(int* n1, int* n2){
 	int t;
@@ -133,12 +156,8 @@ void swap(int* n1, int* n2){
 	*n2=t;
 }
 
-int abs(int x){
-	return x>0?x:-x;
-} // abs()
-
 // REF: http://en.wikipedia.org/wiki/Bresenham's_line_algorithm
-void line(int x0, int y0, int x1, int y1){
+void draw_line(int x0, int y0, int x1, int y1){
  int dx,dy, error,ystep,x,y;
  unsigned char steep = abs(y1 - y0) > abs(x1 - x0);
   if (steep) {
@@ -164,87 +183,111 @@ void line(int x0, int y0, int x1, int y1){
   }
 } // line()
 
+
 void rectangle(int x0, int y0, int x1, int y1){
-	line(x0,y0,x1,y0);
-	line(x1,y0,x1,y1);
-	line(x0,y1,x1,y1);
-	line(x0,y0,x0,y1);
+	draw_line(x0,y0,x1,y0);
+	draw_line(x1,y0,x1,y1);
+	draw_line(x0,y1,x1,y1);
+	draw_line(x0,y0,x0,y1);
 } // rectangle()
 
 
-void draw_char(int x, int y,  unsigned char c){
-int bit,row,byte;
+/*
+ *  écris le caractère dans disp_buffer.
+ *  utilise disp_buffer[] comme un tableau 2D disp_buffer[BYTES_PER_LINE][7]
+ */
+void draw_char(int x,  unsigned char c){
+unsigned char shift,row;
+unsigned int idx, byte;
 
 	if (c>='a') c -=32;
     if (c<' ' || c>'z') return;
     c -= ' ';
-    for (row=0;row<7;row++){
-		byte=font[c][row];
-		for (bit=4;bit>=0;bit--){
-			if (x>=(8*BYTES_PER_LINE-1))
-				break;
-			if (byte & (1<<bit))
-				dot(x,y);
-			else
-				erase_dot(x,y);
-			x++;
-		}//for(bit...
-		x-=5;
-		y++;
+	shift=11-(x&7);
+	x >>= 3;
+	for (row=0;row<7;row++){
+    	idx = (row<<5)+x; // BYTES_PER_LINE=32
+    	byte=font[c][row];
+		if (shift>7){
+			disp_buffer[idx] |=byte<<(shift-8);
+		}else{
+			disp_buffer[idx] |=byte>>(8-shift);
+			disp_buffer[idx+1] |=byte<<(shift);
+		}
 	}// for (row...
 } // draw_char()
 
 
-const char msg[]="MSP430G2553 B/W NTSC video demo.";
+const char msg[]="MSP430G2553 B/W NTSC video demo. 256x230.";
 
 
 void print(int x, int y, const char* str){
 int idx=0;
-	while  (x<(8*BYTES_PER_LINE-6) && (str[idx]!=0)){
-		draw_char(x,y,str[idx]);
+	// lire mémoire spi qui va contenir la chaîne de caractère
+	byte_count=BYTES_PER_LINE;
+	mcu_addr=(unsigned int)&disp_buffer[0];
+	sram_addr=y<<5;
+	for (idx=0;idx<7;idx++){
+		video_op=VID_READ;
+		while (video_op);
+		sram_addr += BYTES_PER_LINE;
+		mcu_addr  += BYTES_PER_LINE;
+	}
+	// écrire la chaîne dans disp_buffer
+	idx=0;
+	while  (x<((BYTES_PER_LINE<<3)-6) && (str[idx]!=0)){
+		draw_char(x,str[idx]);
 		idx++;
 		x+=6;
 	}
-
+	// retransférer le buffer dans la SPI RAM
+	sram_addr=(y<<5);
+	mcu_addr=(unsigned int)&disp_buffer[0];
+	for (idx=0;idx<7;idx++){
+		video_op=VID_WRITE;
+		while(video_op);
+		sram_addr += BYTES_PER_LINE;
+		mcu_addr += BYTES_PER_LINE;
+	}
 }// print()
-*/
+
 
 
 #include "loup.h"
-/*
-unsigned char left2right_byte(unsigned char byte){
-	int i,n;
-	n=0;
-	for (i=0;i<8;i++){
-		n <<=1;
-		if (byte & (1<<i)){
-			n += 1;
-		}
-	}
-	return n;
-}// left2right_byte()
-*/
+#define MARGIN ((BYTES_PER_LINE-IMG_WIDTH)>>1)
 void copy_img_2_sram(){//copie l'image qui est dans la flash vers SPI RAM
-	int i,l;
-	for (l=0;l<233;l++){
-		for (i=0;i<22;i++){
-			line[i]=loup[l][i];
+	unsigned int i,l, addr;
+	for (i=0;i<MARGIN;i++){ // efface les marges
+		disp_buffer[i]=0;
+		disp_buffer[i+MARGIN+IMG_WIDTH]=0;
+	}
+	addr=0;
+//	disp_buffer[0]=0x80; 				 // ligne verticale à gauche
+//	disp_buffer[BYTES_PER_LINE-1]=0x01; // et à droite
+	for (l=0;l<IMG_HEIGHT;l++){
+		for (i=0;i<IMG_WIDTH;i++){
+			disp_buffer[i+MARGIN]=loup[l][i]; // image centrée horizontalement
 		}
-		line[i]=0;
-		write_sram_bytes(BYTES_PER_LINE*l,&line[0],BYTES_PER_LINE);
+		write_sram_bytes(addr,&disp_buffer[0],BYTES_PER_LINE);
+		addr += BYTES_PER_LINE;
+	}
+	for (i=0;i<BYTES_PER_LINE;i++){
+		disp_buffer[i]=255;
 	}
 }// copy_2_sram()
+
 
 /*
  * main.c
  */
 void main(void) {
-    WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
+
+	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
     configure_clock();
     P2DIR = SYNC_OUT;  // P2.1 en sortie
     P2SEL = SYNC_OUT; //minuterie sur P2.1
     // configuration SPI RAM
-    sram_init(SRAM_SEQ_MODE,SRAM_SMCLK, 4);
+    sram_init(SRAM_SEQ_MODE,SRAM_SMCLK, SMCLK_DIV);
     copy_img_2_sram();
     //configuration minuterie 1 pour syncho NTSC
     TA1CCR0=H_LINE;
@@ -255,69 +298,20 @@ void main(void) {
     TA1CCTL2 |= CCIE;
     TA1CTL = TASSEL_2+MC_1; // SMCLK, UP mode
     _enable_interrupts();
+    video_op=VID_NONE;
+    video_addr=0;
 	ln_cnt=1;
-	display=0;
 	blanked=1;
 	_blank_level();
+	sram_addr=221<<5;
+	byte_count=9;
+	video_op=VID_CLR;
+	while (video_op);
+	print(0,221,&msg[0]);
 	while (1){
 	}//while(1)
 }//main()
 
-/*
-#pragma vector=TIMER1_A0_VECTOR
-__interrupt void ta1_ccr0_isr(void){ // synchronisation NTSC progressif
-		ln_cnt++;
-		switch (ln_cnt){
-		case 4:
-			TA1CCR1=H_SYNC;
-			break;
-		case 20:
-			blanked=0;
-			_enable_sram();
-			SRAM_TXBUF = SRAM_READ;
-			_wait_txifg();
-			SRAM_TXBUF=0;
-			_wait_txifg();
-			SRAM_TXBUF=0;
-			_wait_txifg();
-		case FIRST_LINE:  // première avec affichage
-			display=1;
-	        break;
-		case LAST_LINE:  // dernière ligne avec affichage
-			display=0;
-			_disable_sram();
-			break;
-		case 263:
-			ln_cnt=1;
-			TA1CCR1=H_LINE-H_SYNC;
-			blanked=1;
-			break;
-		default:;
-		}
-
-} // ta1_ccr0_isr()
-
-
-#pragma vector=TIMER1_A1_VECTOR
-__interrupt void ta1_ccrx_isr(void){
-	unsigned int i;
-	if (TA1IV!=TA1IV_TACCR2 || blanked) return;
-	_black_level();
-	if (display){
-		_nop();
-		_nop();
-		_nop();
-		for (i=0;i<BYTES_PER_LINE;i++){
-			SRAM_TXBUF=0;
-			_wait_txifg();
-			line[i]=SRAM_RXBUF;
-		}
-		while (SRAM_SPI_STAT & UCBUSY);
-	}
-	while (TA1R<950);
-	_blank_level();
-}
-*/
 
 #pragma vector=ADC10_VECTOR
 #pragma vector=COMPARATORA_VECTOR

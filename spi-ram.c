@@ -53,6 +53,7 @@ void read_sram_bytes(unsigned int address, unsigned char *buffer, unsigned int c
 	_disable_sram();
 }// read_sram_bytes()
 
+
 void write_sram_bytes(unsigned int address, const unsigned char *buffer, unsigned int count){
 	unsigned int i;
 	_enable_sram();
@@ -89,3 +90,34 @@ void write_sram_status(unsigned char status){
 	while (SRAM_SPI_STAT & UCBUSY);
 	_disable_sram();
 }//write_sram_status()
+
+unsigned char read_sram_char(unsigned int address){
+	_enable_sram();
+	SRAM_TXBUF=SRAM_READ;
+	_wait_txifg();
+	SRAM_TXBUF=address>>8;
+	_wait_txifg();
+	SRAM_TXBUF=address;
+	_wait_txifg();
+	if(SRAM_RXBUF);
+	SRAM_TXBUF=0;
+	_wait_rxifg();
+	_disable_sram();
+	return SRAM_RXBUF;
+}//read_sram_char()
+
+void write_sram_char(unsigned int address, unsigned char ch){
+	_enable_sram();
+	SRAM_TXBUF=SRAM_WRITE;
+	_wait_txifg();
+	SRAM_TXBUF=address>>8;
+	_wait_txifg();
+	SRAM_TXBUF=address;
+	_wait_txifg();
+	SRAM_TXBUF=ch;
+	_wait_txifg();
+	_disable_sram();
+}//write_sram_char()
+
+
+

@@ -60,6 +60,7 @@ void read_sram_bytes(unsigned int address, unsigned char *buffer, unsigned int c
 void write_sram_bytes(unsigned int address, const unsigned char *buffer, unsigned int count);
 unsigned char read_sram_status();
 void write_sram_status(unsigned char status);
-
+unsigned char read_sram_char(unsigned int address);
+void write_sram_char(unsigned int address, unsigned char ch);
 
 #endif /* SPI_RAM_H_ */

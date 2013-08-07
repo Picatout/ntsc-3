@@ -48,7 +48,6 @@ end procedure
 
 
 atom new_pixel, old_pixel
-sequence line
 atom error
 for y=1 to length(original) do
    for x=1 to length(original[y]) do
@@ -82,9 +81,9 @@ for y=1 to length(b_w) do
    puts(fo,"{")
    for x=1 to length(b_w[y]) do
        if x<length(b_w[y]) then
-           printf(fo,"0x%02x, ",b_w[y][x])
+           printf(fo,"0x%02x, ",and_bits(not_bits(b_w[y][x]),255))
        else
-           printf(fo,"0x%02x},\n",b_w[y][x])
+           printf(fo,"0x%02x},\n",and_bits(not_bits(b_w[y][x]),255))
        end if
    end for
 end for
