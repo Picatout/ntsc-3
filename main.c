@@ -118,9 +118,7 @@ void configure_clock(){ // MCLK et SMCLK à 16Mhz
 void clear_screen(){
 	sram_addr=0;
 	byte_count=SCREEN_HEIGHT;
-	_disable_interrupts();
 	video_op=VID_CLR;
-	_enable_interrupts();
 	while (video_op);
 
 }//clear_screen()
@@ -131,9 +129,7 @@ void dot(int x, int y){
 	disp_buffer[0] = (1 << (7-(x & 7)));
 	sram_addr=(y<<5)+(x>>3); // 48 octets par lignes, sram_addr=y*BYTES_PER_LINE + x/8
 	mcu_addr=(unsigned int)(&disp_buffer[0]);
-	_disable_interrupts();
 	video_op=VID_SET;
-	_enable_interrupts();
 	while (video_op);
 } // dot()
 
