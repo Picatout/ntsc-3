@@ -25,7 +25,7 @@ volatile unsigned char blanked; // indicateur d'affichage bloquée pendant phase 
 volatile unsigned char video_op; // opération sur mémoire vidéo
 volatile unsigned int sram_addr; // addresse début opération lecture/écriture
 volatile unsigned int byte_count; // nombre d'octets à lire ou écrire
-volatile unsigned long long ticks; // compteur système incrémentée à toute les 62,5µSec.
+volatile unsigned  long ticks; // compteur système incrémentée à toute les 62,5µSec.
 volatile unsigned int video_addr; // addresse de début de la mémoire vidéo dans la SRAM
 volatile unsigned int mcu_addr; // pointeur vers buffer vidéo en RAM
 
