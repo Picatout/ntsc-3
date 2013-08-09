@@ -17,8 +17,8 @@
 
 VSYNC_START	.equ	264
 VSYNC_END	.equ	4
-DISP_START  .equ	20 + FIRST_LINE
-DISP_END	.equ    DISP_START+DISP_LINES
+DISP_START  .equ	20
+DISP_END	.equ    263
 
 
 _wait_txifg	.macro				; attend que le bit SRAM_TXIFG vienne à 1 dans IFG2
@@ -27,7 +27,7 @@ m1?	bit.b #SRAM_TXIFG, &IFG2	; vérification bit interruption
 	.endm
 
 _wait_rxifg .macro    			; attend que le bit SRAM_RXIFG vienne à 1 dans IFG2
-m1?: bit.b #SRAM_TXIFG, &IFG2	; 7 cycles
+m1?: bit.b #SRAM_RXIFG, &IFG2	; 7 cycles
 	jz m1?
 	.endm
 
@@ -75,9 +75,9 @@ _init_sram_write .macro				; 17 cycles
 ; envoie l'adresse à la SPI RAM
 ;*********************************
 _send_sram_addr .macro				; 24 cycles
-	mov.b &sram_addr+1, &SRAM_TXBUF
+	mov.b sram_addr+1, &SRAM_TXBUF
 	_wait_txifg
-	mov.b &sram_addr, &SRAM_TXBUF
+	mov.b sram_addr, &SRAM_TXBUF
 	_wait_txifg
 	.endm
 
@@ -128,7 +128,8 @@ video_rst: ; *sram_addr &= ~(*mcu_addr)
 	mov.b #0, &SRAM_TXBUF
 	_wait_spi_idle
 	mov.b &SRAM_RXBUF, R5
-	bic.b mcu_addr, R5 ; R5 &= ~(*mcu_addr)
+	mov mcu_addr, R4
+	bic.b 0(R4), R5 ; R5 &= ~(*mcu_addr)
 	_disable_sram
 	_init_sram_write
 	_send_sram_addr
@@ -143,7 +144,8 @@ video_set: ; *sram_addr  |= *mcu_addr
 	mov.b #0, &SRAM_TXBUF
 	_wait_spi_idle
 	mov.b &SRAM_RXBUF, R5
-	bis.b mcu_addr, R5
+	mov mcu_addr, R4
+	bis.b 0(R4), R5
 	_disable_sram
 	_init_sram_write
 	_send_sram_addr
@@ -158,7 +160,8 @@ video_inv: ; SRAM ^= line[0]
 	mov.b #0, &SRAM_TXBUF
 	_wait_spi_idle
 	mov.b &SRAM_RXBUF, R5
-	xor.b mcu_addr, R5
+	mov mcu_addr, R4
+	xor.b 0(R4), R5
 	_disable_sram
 	_init_sram_write
 	_send_sram_addr
@@ -172,13 +175,16 @@ video_read: ; lis une série d'octets maximum BYTES_PER_LINE
 	mov.w byte_count, R4 ; nombre d'octets à lire
 	_init_sram_read
 	_send_sram_addr
-	mov.b &SRAM_RXBUF,0(R5) ; raz SRAM_RXIFG
-$1:	mov.b #0, &SRAM_TXBUF
-	_wait_rxifg
-	mov.b &SRAM_RXBUF, 0(R5)
-	inc R5
-	dec R4
-	jnz $1
+	_wait_spi_idle
+	mov.b &SRAM_RXBUF,0(R5)
+	mov.b #0, &SRAM_TXBUF
+	_wait_txifg
+$1:	mov.b #0, &SRAM_TXBUF		; 5
+	_wait_rxifg					; 7 / boucle
+	mov.b &SRAM_RXBUF,0(R5)     ; 6
+	inc R5						; 1
+	dec R4						; 1
+	jnz $1						; 2
 	.newblock
 	mov #VID_NONE, video_op
 	_disable_sram
@@ -188,10 +194,11 @@ video_write:; écris dans la mémoire SRAM pendant les lignes non affichées, maxim
 	mov.w byte_count, R4 ; nombre d'octets à écrire
 	_init_sram_write
 	_send_sram_addr
-$1:	mov.b @R5+, &SRAM_TXBUF
+$1:	mov.b 0(R5), &SRAM_TXBUF  ; 6 cycles
+	inc R5					  ; 1
 	_wait_txifg
-	dec R4
-	jnz $1
+	dec R4					  ; 1
+	jnz $1					  ; 2
 	.newblock
 	mov #VID_NONE, video_op
 	_wait_spi_idle
@@ -210,7 +217,7 @@ $1: mov.b #0, SRAM_TXBUF
 	_disable_sram
 	add #BYTES_PER_LINE, &sram_addr
 	dec &byte_count
-	jnz ta1_ccr0_exit
+	jnz video_op_exit
 	mov.b #VID_NONE, video_op
 	jmp video_op_exit
 vsync_start:
@@ -223,15 +230,13 @@ vsync_end:
 disp_end:
 	mov.b #1, blanked
 	_disable_sram
-	;mov.b #1,&SRAM_BR0
 	jmp ta1_ccr0_exit
 disp_start:
 	mov.b #0, blanked
-	;mov.b #SMCLK_DIV, &SRAM_BR0
 	_init_sram_read
-	mov.b #0, &SRAM_TXBUF
+	mov.b video_addr+1, &SRAM_TXBUF
 	_wait_txifg
-	mov.b #0, &SRAM_TXBUF
+	mov.b video_addr, &SRAM_TXBUF
 	_wait_txifg
 	jmp ta1_ccr0_exit
 video_op_exit:
@@ -261,14 +266,16 @@ $1:	cmp #130, TA1R
 $2: dec R4		; délais avant de débuter l'envoie de bits
 	jnz $2
 	.newblock
-	mov #BYTES_PER_LINE, R5
-$1:	mov.b #0, &SRAM_TXBUF	; 2 cycles transmet un 0 pour déclenché la lecture de l'octet
+	mov #BYTES_PER_LINE-1, R5
+	mov.b #0, &SRAM_TXBUF
+	_wait_txifg
+$1:	mov.b #0, &SRAM_TXBUF	; 5 cycles
 	mov #5, R4	; 2 cycle délais d'attente temps lecture octet
 $2:	dec R4		; 1 cycle
 	jnz $2		; 2 cycles
-	nop			; 1 cycle
+;	nop			; 1 cycle
 	dec R5		; 1 cycle
-	jnz $1		; 2 cycles, total 24
+	jnz $1		; 2 cycles, total 26
 	.newblock
 wait_eol: 			; attend la fin de la ligne, TA1R>=950
 $1:	cmp #962, TA1R

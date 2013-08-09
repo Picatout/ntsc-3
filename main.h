@@ -12,14 +12,16 @@
 #define H_SYNC 75   	// 4,7µSec
 #define H_DISPLAY_DELAY  120
 #define FIRST_LINE 6   	// première ligne visible à l'écran
-#define LAST_LINE  235 	// dernière ligne visible à l'écran
-#define DISP_LINES 230
+#define LAST_LINE  239 	// dernière ligne visible à l'écran
+#define DISP_LINES LAST_LINE-FIRST_LINE+1  // nombre de lignes visibles
 #define BYTES_PER_LINE 32
 #define SCREEN_WIDTH BYTES_PER_LINE*8  	// pixels horizontal
-#define SCREEN_HEIGHT 230 	// 230 pixels vertical
+#define SCREEN_HEIGHT LAST_LINE-FIRST_LINE+1 	// pixels vertical
 #define VIDEO_MEMSIZE (SCREEN_WIDTH>>3)*SCREEN_HEIGHT  // nombre octets mémoire vidéo dans SRAM
 #define SMCLK_DIV 3  // diviseur pour SPI lors de l'affichage
 #define BLKCLK_DIV 2 // diviseur pour le SPI hors affichage
+#define PAGE_HEIGHT 240 // nombre de ligne par page vidéo
+#define PAGE_SIZE BYTES_PER_LINE*PAGE_HEIGHT  // nombre d'octets par page vidéo
 
 #define BLK_OUT	BIT0  // P2.2 signal blanking
 
